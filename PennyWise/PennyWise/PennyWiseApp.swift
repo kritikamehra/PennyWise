@@ -13,8 +13,7 @@ struct PennyWiseApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .modelContainer(for: [Transaction.self])
-                .modelContainer(for: [Category.self])
+                .modelContainer(for: [Transaction.self, Category.self])
         }
     }
 }
