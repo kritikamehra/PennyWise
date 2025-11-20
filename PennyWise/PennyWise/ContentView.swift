@@ -18,6 +18,12 @@ struct ContentView: View {
                 .tabItem {
                     Label("Add", systemImage: "plus.circle")
                 }
+            NavigationStack {
+                MonthlySummaryView()
+            }
+            .tabItem {
+                Label("Summary", systemImage: "chart.pie.fill")
+            }
         }
     }
 }

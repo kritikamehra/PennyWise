@@ -12,6 +12,9 @@ struct HomeView: View {
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @Environment(\.modelContext) private var  context
     @State var viewModel = HomeViewModel()
+    @State private var selectedTransaction: Transaction?
+    @State private var showEditSheet = false
+    
     
     var body: some View {
         NavigationStack {
@@ -35,39 +38,75 @@ struct HomeView: View {
                 } else {
                     List {
                         ForEach(viewModel.filteredTransactions) { transaction in
-                            HStack {
-                                Image(systemName: transaction.type == "Income" ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
-                                    .symbolRenderingMode(.palette)
-                                    .foregroundStyle(
-                                        transaction.type == "Income" ? Color.green.opacity(0.8) : Color.red.opacity(0.8),
-                                        .white
-                                    )
-                                    .font(.system(size: 26, weight: .semibold))
-                                    .shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 1)
-                                    .padding(6)
-                                    .background(
-                                        Circle()
-                                            .fill(transaction.type == "Income" ? Color.green.opacity(0.15) : Color.red.opacity(0.15))
-                                    )
+                            HStack(spacing: 14) {
                                 
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(transaction.category?.name ?? "")
-                                        .font(.headline)
-                                    Text(transaction.date, style: .date)
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
+                                // MARK: - Leading Icon
+                                ZStack {
+                                    Circle()
+                                        .fill((transaction.type == "Income" ? Color.green : Color.red).opacity(0.15))
+                                        .frame(width: 46, height: 46)
+                                    
+                                    Image(systemName: transaction.type == "Income" ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
+                                        .symbolRenderingMode(.palette)
+                                        .foregroundStyle(
+                                            (transaction.type == "Income" ? Color.green.opacity(0.9) : Color.red.opacity(0.9)),
+                                            .white
+                                        )
+                                        .font(.system(size: 26, weight: .semibold))
+                                        .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
                                 }
+                                
+                                
+                                // MARK: - MAIN TEXT
+                                VStack(alignment: .leading, spacing: 2) {
+                                    
+                                    // TITLE: CATEGORY
+                                    Text(transaction.category?.name ?? "No Category")
+                                        .font(.headline)
+                                    
+                                    // SUBTITLE: NOTE + DATE
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        if !transaction.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                            Text(transaction.note)
+                                                .foregroundColor(.gray)
+                                        }
+                                        
+                                        Text(transaction.date, style: .date)
+                                            .foregroundColor(.gray)
+                                    }
+                                    .font(.caption)
+                                }
+                                
                                 Spacer()
+                                
+                                // MARK: - Amount
                                 Text("₹\(transaction.amount, specifier: "%.2f")")
+                                    .font(.headline)
                                     .bold()
                                     .foregroundColor(transaction.type == "Income" ? .green : .red)
                             }
-                            .padding(.vertical, 6)
+                            .contentShape(Rectangle())  // makes entire row tappable
+                            .background(Color(.systemBackground))
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                
+                                Button(role: .destructive) {
+                                    viewModel.deleteTransaction(transaction: transaction, context: context)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                
+                                Button {
+                                    selectedTransaction = transaction
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                                .tint(.blue)
+                            }
                         }
                         .onDelete { indexSet in
                             for index in indexSet {
-                                let transaction = viewModel.filteredTransactions[index]
-                                viewModel.deleteTransaction(transaction: transaction, context: context)
+                                let tx = viewModel.filteredTransactions[index]
+                                viewModel.deleteTransaction(transaction: tx, context: context)
                             }
                         }
                     }
@@ -78,6 +117,13 @@ struct HomeView: View {
             .onAppear {
                 viewModel.fetchTransactions(context: context)
             }
+            .sheet(item: $selectedTransaction, onDismiss: {
+                viewModel.fetchTransactions(context: context)
+            }) { tx in
+                EditTransactionView(transaction: tx)
+            }
+            
+            
         }
     }
 }
