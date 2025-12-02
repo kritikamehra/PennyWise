@@ -58,7 +58,7 @@ class MonthlySummaryViewModel {
         let expensesOnly = monthlyTransactions.filter { $0.type == "Expense" }
         
         let grouped = Dictionary(grouping: expensesOnly) {
-            $0.category?.name ?? "Others"
+            $0.category.name
         }
         
         expenseCategoryTotals = grouped.map { (categoryName, items) in

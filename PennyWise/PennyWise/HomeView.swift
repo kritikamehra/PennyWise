@@ -61,7 +61,7 @@ struct HomeView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     
                                     // TITLE: CATEGORY
-                                    Text(transaction.category?.name ?? "No Category")
+                                    Text(transaction.category.name)
                                         .font(.headline)
                                     
                                     // SUBTITLE: NOTE + DATE
@@ -117,6 +117,9 @@ struct HomeView: View {
             .onAppear {
                 viewModel.fetchTransactions(context: context)
             }
+            .onChange(of: viewModel.filterType) { _ in
+                viewModel.fetchTransactions(context: context)
+            }
             .sheet(item: $selectedTransaction, onDismiss: {
                 viewModel.fetchTransactions(context: context)
             }) { tx in
@@ -128,23 +131,23 @@ struct HomeView: View {
     }
 }
 
-#Preview {
-    // create model container for preview
-    let container = try! ModelContainer(for: Transaction.self, Category.self)
-    let context = container.mainContext
-    
-    //add sample data
-    let sampleCategory = Category(name: "Food")
-    context.insert(sampleCategory)
-    
-    let sampleTransaction1 = Transaction(amount: 100, type: "Expense", date: Date(), note: "Lunch", category: sampleCategory)
-    let sampleTransaction2 = Transaction(amount: 500, type: "Income", date: Date(), note: "Salary", category: sampleCategory)
-    
-    context.insert(sampleTransaction1)
-    context.insert(sampleTransaction2)
-    try? context.save()
-    
-    // 3️⃣ Create the View with environment
-    return HomeView()
-        .modelContainer(container)
-}
+//#Preview {
+//    // create model container for preview
+//    let container = try! ModelContainer(for: Transaction.self, Category.self)
+//    let context = container.mainContext
+//    
+//    //add sample data
+//    let sampleCategory = Category(name: "Food")
+//    context.insert(sampleCategory)
+//    
+//    let sampleTransaction1 = Transaction(amount: 100, type: "Expense", date: Date(), note: "Lunch", category: sampleCategory)
+//    let sampleTransaction2 = Transaction(amount: 500, type: "Income", date: Date(), note: "Salary", category: sampleCategory)
+//    
+//    context.insert(sampleTransaction1)
+//    context.insert(sampleTransaction2)
+//    try? context.save()
+//    
+//    // 3️⃣ Create the View with environment
+//    return HomeView()
+//        .modelContainer(container)
+//}

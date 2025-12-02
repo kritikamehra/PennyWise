@@ -14,9 +14,9 @@ class Transaction {
     var type: String // income or expense
     var date: Date
     var note: String
-    var category: Category?
+    var category: Category
     
-    init(amount: Double, type: String, date: Date, note: String, category: Category? = nil) {
+    init(amount: Double, type: String, date: Date, note: String, category: Category) {
         self.amount = amount
         self.type = type
         self.date = date

@@ -19,7 +19,7 @@ class AddNewTransactionViewModel {
         type: String,
         date: Date,
         note: String,
-        category: Category?,
+        category: Category,
         context: ModelContext
     ) -> Bool {
         
@@ -35,11 +35,12 @@ class AddNewTransactionViewModel {
             return false
         }
         
-        guard (category != nil) else {
-            alertMessage = "Please select a category."
-            showAlert = true
-            return false
-        }
+//        Already checked in view
+//        guard (category != nil) else {
+//            alertMessage = "Please select a category."
+//            showAlert = true
+//            return false
+//        }
         
         let newTransaction = Transaction(amount: amt, type: type, date: date, note: note, category: category)
         context.insert(newTransaction)

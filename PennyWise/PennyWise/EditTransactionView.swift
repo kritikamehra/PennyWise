@@ -9,51 +9,57 @@ import SwiftUI
 import SwiftData
 
 struct EditTransactionView: View {
-    @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
-    
     @Bindable var transaction: Transaction
+    @Query(sort: \Category.name) private var allCategories: [Category]
+
     @State var viewModel = EditTransactionViewModel()
-    
-    @Query(sort: \Category.name) private var categories: [Category]
-    
+
     var body: some View {
         NavigationStack {
             Form {
-                
-                // MARK: Amount
-                Section("Amount") {
+
+                // MARK: - Amount
+                Section(header: Text("Amount")) {
                     TextField("Enter amount", text: $viewModel.amountText)
                         .keyboardType(.decimalPad)
                 }
-                
-                // MARK: Type
-                Section("Type") {
-                    Picker("Type", selection: $viewModel.type) {
+
+                // MARK: - Type
+                Section(header: Text("Type")) {
+                    Picker("Transaction Type", selection: $viewModel.type) {
                         Text("Income").tag("Income")
                         Text("Expense").tag("Expense")
                     }
                     .pickerStyle(.segmented)
+                    .onChange(of: viewModel.type) { _ in
+                        viewModel.updateCategoryForType(allCategories: allCategories)
+                    }
                 }
-                
-                // MARK: Category
-                if viewModel.type == "Expense" {
-                    Section("Category") {
-                        Picker("Category", selection: $viewModel.selectedCategory) {
-                            ForEach(categories) { category in
+
+                // MARK: - Category
+                Section(header: Text("Category")) {
+                    let filtered = viewModel.filteredCategories(from: allCategories)
+
+                    if filtered.isEmpty {
+                        Text("No categories available")
+                            .foregroundColor(.gray)
+                    } else {
+                        Picker("Select Category", selection: $viewModel.selectedCategory) {
+                            ForEach(filtered) { category in
                                 Text(category.name).tag(Optional(category))
                             }
                         }
                     }
                 }
-                
-                // MARK: Date
-                Section("Date") {
+
+                // MARK: - Date
+                Section(header: Text("Date")) {
                     DatePicker("Select Date", selection: $viewModel.date, displayedComponents: .date)
                 }
-                
-                // MARK: Note
-                Section("Note") {
+
+                // MARK: - Note
+                Section(header: Text("Note")) {
                     TextField("Optional note", text: $viewModel.note)
                 }
             }
@@ -63,21 +69,18 @@ struct EditTransactionView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
-                
+
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
+                    Button("Save") {
+                        viewModel.apply(to: transaction)
+                        dismiss()
+                    }
+                    .disabled(!viewModel.isFormValid)
                 }
             }
             .onAppear {
-                viewModel.load(from: transaction)
+                viewModel.load(from: transaction, allCategories: allCategories)
             }
         }
-    }
-    
-    // MARK: Save Function
-    private func save() {
-        viewModel.apply(to: transaction)
-        try? context.save()
-        dismiss()
     }
 }
