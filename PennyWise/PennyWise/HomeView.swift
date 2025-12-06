@@ -4,109 +4,85 @@
 //
 //  Created by Kritika Mehra on 05/10/25.
 //
+//
+//  HomeView.swift
+//  PennyWise
+//
 
 import SwiftUI
 import SwiftData
 
 struct HomeView: View {
-    @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
-    @Environment(\.modelContext) private var  context
+    
+    @Environment(\.modelContext) private var context
     @State var viewModel = HomeViewModel()
+
+    @State private var showFilters = false
     @State private var selectedTransaction: Transaction?
-    @State private var showEditSheet = false
-    
-    
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
-                
-                // Filter Picker
-                Picker("Filter", selection: $viewModel.filterType) {
-                    Text("All").tag("All")
-                    Text("Income").tag("Income")
-                    Text("Expense").tag("Expense")
+
+                // Quick Filter
+                Picker("Filter", selection: $viewModel.selectedType) {
+                    ForEach(TransactionTypeFilter.allCases) { type in
+                        Text(type.rawValue).tag(type)
+                    }
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
+
                 
-                // Transaction List
                 if viewModel.filteredTransactions.isEmpty {
-                    ContentUnavailableView("No Transactions",
-                                           systemImage: "tray",
-                                           description: Text("Add a transaction to see it here."))
+                    ContentUnavailableView(
+                        "No Transactions",
+                        systemImage: "tray",
+                        description: Text("Try changing your filters.")
+                    )
                     .padding(.top, 50)
                 } else {
                     List {
                         ForEach(viewModel.filteredTransactions) { transaction in
+                            
                             HStack(spacing: 14) {
+                                Circle()
+                                    .fill((transaction.type == "Income" ? Color.green : Color.red).opacity(0.15))
+                                    .frame(width: 46, height: 46)
+                                    .overlay {
+                                        Image(systemName: transaction.type == "Income" ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
+                                            .font(.system(size: 26))
+                                            .foregroundColor(transaction.type == "Income" ? .green : .red)
+                                    }
                                 
-                                // MARK: - Leading Icon
-                                ZStack {
-                                    Circle()
-                                        .fill((transaction.type == "Income" ? Color.green : Color.red).opacity(0.15))
-                                        .frame(width: 46, height: 46)
-                                    
-                                    Image(systemName: transaction.type == "Income" ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
-                                        .symbolRenderingMode(.palette)
-                                        .foregroundStyle(
-                                            (transaction.type == "Income" ? Color.green.opacity(0.9) : Color.red.opacity(0.9)),
-                                            .white
-                                        )
-                                        .font(.system(size: 26, weight: .semibold))
-                                        .shadow(color: .black.opacity(0.15), radius: 1, x: 0, y: 1)
-                                }
-                                
-                                
-                                // MARK: - MAIN TEXT
                                 VStack(alignment: .leading, spacing: 2) {
-                                    
-                                    // TITLE: CATEGORY
                                     Text(transaction.category.name)
                                         .font(.headline)
                                     
-                                    // SUBTITLE: NOTE + DATE
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        if !transaction.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                            Text(transaction.note)
-                                                .foregroundColor(.gray)
-                                        }
-                                        
-                                        Text(transaction.date, style: .date)
+                                    if !transaction.note.isEmpty {
+                                        Text(transaction.note)
                                             .foregroundColor(.gray)
+                                            .font(.caption)
                                     }
-                                    .font(.caption)
+                                    
+                                    Text(transaction.date, style: .date)
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
                                 }
                                 
                                 Spacer()
                                 
                                 // MARK: - Amount
                                 Text("₹\(transaction.amount, specifier: "%.2f")")
-                                    .font(.headline)
                                     .bold()
                                     .foregroundColor(transaction.type == "Income" ? .green : .red)
                             }
-                            .contentShape(Rectangle())  // makes entire row tappable
-                            .background(Color(.systemBackground))
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                
+                            .swipeActions {
                                 Button(role: .destructive) {
                                     viewModel.deleteTransaction(transaction: transaction, context: context)
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
-                                
-                                Button {
-                                    selectedTransaction = transaction
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
-                                .tint(.blue)
-                            }
-                        }
-                        .onDelete { indexSet in
-                            for index in indexSet {
-                                let tx = viewModel.filteredTransactions[index]
-                                viewModel.deleteTransaction(transaction: tx, context: context)
                             }
                         }
                     }
@@ -114,19 +90,21 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("Transactions")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showFilters.toggle()
+                    } label: {
+                        Image(systemName: "line.3.horizontal.decrease.circle")
+                    }
+                }
+            }
             .onAppear {
-                viewModel.fetchTransactions(context: context)
+                viewModel.loadData(context: context)
             }
-            .onChange(of: viewModel.filterType) { _ in
-                viewModel.fetchTransactions(context: context)
+            .sheet(isPresented: $showFilters) {
+                FiltersView(viewModel: viewModel)
             }
-            .sheet(item: $selectedTransaction, onDismiss: {
-                viewModel.fetchTransactions(context: context)
-            }) { tx in
-                EditTransactionView(transaction: tx)
-            }
-            
-            
         }
     }
 }
