@@ -66,7 +66,7 @@ class HomeViewModel {
             result = result.filter { $0.type == "Expense" }
         }
         
-        // Filter by category
+        // Filter by category (use id match)
         if let category = selectedCategory {
             result = result.filter { $0.category.id == category.id }
         }
@@ -94,8 +94,9 @@ class HomeViewModel {
     }
     
     func deleteTransaction(transaction: Transaction, context: ModelContext) {
-            context.delete(transaction)
+        context.delete(transaction)
         try? context.save()
         fetchTransactions(context: context)
     }
 }
+

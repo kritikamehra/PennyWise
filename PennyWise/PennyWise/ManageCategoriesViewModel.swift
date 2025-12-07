@@ -8,6 +8,13 @@
 import SwiftData
 import SwiftUI
 
+enum AddCategoryOutcome {
+    case success
+//    case emptyName    // case can't be reached as button is disabled
+    case duplicate
+    case saveError(String)
+}
+
 @MainActor
 @Observable
 class ManageCategoriesViewModel {
@@ -29,20 +36,20 @@ class ManageCategoriesViewModel {
     }
     
     // MARK: - Add Category
-    func addCategory(context: ModelContext) -> Bool {
+    func addCategory(context: ModelContext) -> AddCategoryOutcome {
         print("➡️ Add tapped. Name: \(newCategoryName), Type: \(selectedType.rawValue)")
         print("Store config:", context.container.configurations)
 
-
         let trimmedName = newCategoryName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedName.isEmpty else {
-            print("❌ Empty name")
-            return false
-        }
+//         Already disabled button to case can't be reached
+//        guard !trimmedName.isEmpty else {
+//            print("❌ Empty name")
+//            return .emptyName
+//        }
 
         if categories.contains(where: { $0.name.lowercased() == trimmedName.lowercased() && $0.type == selectedType }) {
             print("❌ Duplicate category")
-            return false
+            return .duplicate
         }
 
         let newCategory = Category(name: trimmedName, type: selectedType)
@@ -55,14 +62,13 @@ class ManageCategoriesViewModel {
             fetchCategories(from: context)
             let all = try context.fetch(FetchDescriptor<Category>())
             print("🔥 ALL CATEGORIES IN DB:", all)
-
             print("📥 After fetch:", categories)
             newCategoryName = ""
             selectedType = .expense
-            return true
+            return .success
         } catch {
             print("🔥 Error saving category:", error.localizedDescription)
-            return false
+            return .saveError(error.localizedDescription)
         }
     }
 

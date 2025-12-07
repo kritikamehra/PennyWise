@@ -26,20 +26,18 @@ enum ColorPalette {
 
 // MARK: - Typography
 enum FontStyle {
-    static let title = Font.system(size: 28, weight: .bold)
-    static let heading = Font.system(size: 20, weight: .semibold)
-    static let body = Font.system(size: 16, weight: .regular)
-    static let caption = Font.system(size: 13, weight: .regular)
+    static let title = Font.system(.title, design: .rounded)
+    static let heading = Font.system(.headline, design: .rounded)
+    static let body = Font.system(.body, design: .rounded)
+    static let caption = Font.system(.caption, design: .rounded)
 }
 
 
 // MARK: - Spacing
 enum Spacing {
-    static let xSmall: CGFloat = 4
-    static let small: CGFloat = 8
-    static let medium: CGFloat = 16
-    static let large: CGFloat = 24
-    static let xLarge: CGFloat = 32
+    static let small: CGFloat = 6
+    static let medium: CGFloat = 12
+    static let large: CGFloat = 20
 }
 
 enum Radius {

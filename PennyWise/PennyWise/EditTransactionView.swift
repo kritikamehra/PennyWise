@@ -20,16 +20,20 @@ struct EditTransactionView: View {
             Form {
 
                 // MARK: - Amount
-                Section(header: Text("Amount")) {
-                    TextField("Enter amount", text: $viewModel.amountText)
+                Section(header: SectionHeader("Amount", icon: "dollarsign")) {
+                    TextField("Amount", text: $viewModel.amountText)
                         .keyboardType(.decimalPad)
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(Color("TextPrimary"))
                 }
 
                 // MARK: - Type
-                Section(header: Text("Type")) {
-                    Picker("Transaction Type", selection: $viewModel.type) {
-                        Text("Income").tag("Income")
-                        Text("Expense").tag("Expense")
+                Section(header: SectionHeader("Type", icon: "arrow.up.arrow.down")) {
+                    Picker("", selection: $viewModel.type) {
+                        Text("Income")
+                            .tag("Income")
+                        Text("Expense")
+                            .tag("Expense")
                     }
                     .pickerStyle(.segmented)
                     .onChange(of: viewModel.type) { _ in
@@ -38,36 +42,47 @@ struct EditTransactionView: View {
                 }
 
                 // MARK: - Category
-                Section(header: Text("Category")) {
+                Section(header: SectionHeader("Category", icon: "tag")) {
                     let filtered = viewModel.filteredCategories(from: allCategories)
 
                     if filtered.isEmpty {
                         Text("No categories available")
-                            .foregroundColor(.gray)
+                            .foregroundColor(Color("TextSecondary"))
+                            .font(.caption)
                     } else {
                         Picker("Select Category", selection: $viewModel.selectedCategory) {
                             ForEach(filtered) { category in
-                                Text(category.name).tag(Optional(category))
+                                Text(category.name)
+                                    .tag(Optional(category))
                             }
                         }
+                        .pickerStyle(.menu)
                     }
                 }
 
                 // MARK: - Date
-                Section(header: Text("Date")) {
+                Section(header: SectionHeader("Date", icon: "calendar")) {
                     DatePicker("Select Date", selection: $viewModel.date, displayedComponents: .date)
+                        .datePickerStyle(.compact)
+                        .font(.system(size: 16))
                 }
 
                 // MARK: - Note
-                Section(header: Text("Note")) {
-                    TextField("Optional note", text: $viewModel.note)
+                Section(header: SectionHeader("Note", icon: "square.and.pencil")) {
+                    TextField("Add a note", text: $viewModel.note)
+                        .font(.system(size: 16))
+                        .foregroundColor(Color("TextPrimary"))
                 }
             }
+            .padding(.top, Spacing.large)
+            .scrollContentBackground(.hidden)
+            .background(Color("Background"))
             .navigationTitle("Edit Transaction")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .foregroundColor(Color("Secondary"))
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
@@ -76,6 +91,8 @@ struct EditTransactionView: View {
                         dismiss()
                     }
                     .disabled(!viewModel.isFormValid)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(viewModel.isFormValid ? Color("Primary") : Color("TextSecondary"))
                 }
             }
             .onAppear {
