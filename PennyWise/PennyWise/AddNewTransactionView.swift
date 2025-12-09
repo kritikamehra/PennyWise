@@ -12,8 +12,13 @@ struct AddNewTransactionView: View {
     
     @Environment(\.modelContext) var context
     @Query(sort: \Category.name) private var categories: [Category]
-    
     @StateObject private var viewModel = AddNewTransactionViewModel()
+    @FocusState private var focusedField: Field?
+    
+    enum Field: Hashable {
+           case amount
+           case note
+       }
     
     private var filteredCategories: [Category] {
         viewModel.filteredCategories(categories)
@@ -36,6 +41,7 @@ struct AddNewTransactionView: View {
                     // MARK: - Save Button
                     Button {
                         viewModel.saveTransaction(context: context)
+                        focusedField = nil     // dismiss when saving
                     } label: {
                         Text("Save Transaction")
                             .frame(maxWidth: .infinity)
@@ -46,10 +52,12 @@ struct AddNewTransactionView: View {
                             .font(.headline)
                     }
                     .disabled(!viewModel.isSaveEnabled)
-
                 }
                 .padding(.horizontal)
                 .padding(.top)
+            }
+            .onTapGesture {
+                focusedField = nil     //  Dismiss Keyboard
             }
             .background(Color("Background").ignoresSafeArea())
             .navigationTitle("Add Transaction")
@@ -77,6 +85,7 @@ struct AddNewTransactionView: View {
                 TextField("0.00", text: $viewModel.amount)
                     .keyboardType(.decimalPad)
                     .inputField()
+                    .focused($focusedField, equals: .amount)
             }
             
             VStack(alignment: .leading, spacing: 12) {
@@ -108,6 +117,11 @@ struct AddNewTransactionView: View {
                 
                 TextField("Optional note", text: $viewModel.note)
                     .inputField()
+                    .focused($focusedField, equals: .note)  // Add
+                    .submitLabel(.done)
+                    .onSubmit {
+                        focusedField = nil     // Dismiss
+                    }
             }
         }
         .padding(.bottom, 10)
@@ -118,6 +132,7 @@ struct AddNewTransactionView: View {
             if filteredCategories.isEmpty {
                 Text("No \(viewModel.type.lowercased()) categories available")
                     .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Select Category")

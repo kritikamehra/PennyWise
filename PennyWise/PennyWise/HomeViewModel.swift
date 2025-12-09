@@ -17,6 +17,7 @@ enum TransactionTypeFilter: String, CaseIterable, Identifiable {
 }
 
 enum TransactionDateRange: String, CaseIterable, Identifiable {
+    case all = "All"
     case thisMonth = "This Month"
     case lastMonth = "Last Month"
     case thisYear = "This Year"
@@ -30,7 +31,7 @@ enum TransactionDateRange: String, CaseIterable, Identifiable {
 class HomeViewModel {
     
     var selectedType: TransactionTypeFilter = .all
-    var selectedDateRange: TransactionDateRange = .thisMonth
+    var selectedDateRange: TransactionDateRange = .all
     var selectedCategory: Category? = nil
     var transactions: [Transaction] = []
     var categories: [Category] = []
@@ -76,6 +77,9 @@ class HomeViewModel {
         let calendar = Calendar.current
         
         switch selectedDateRange {
+        case .all:
+            break
+            
         case .thisMonth:
             result = result.filter { calendar.isDate($0.date, equalTo: now, toGranularity: .month) }
             

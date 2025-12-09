@@ -16,6 +16,7 @@ struct ManageCategoriesView: View {
     @State private var showOutcomeAlert = false
     @State private var outcomeAlertMessage = ""
     @State private var lastAddWasSuccess = false
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -33,9 +34,22 @@ struct ManageCategoriesView: View {
                         ForEach(incomeCategories) { category in
                             Text(category.name)
                                 .font(.body)
-                        }
-                        .onDelete { indexSet in
-                            deleteCategory(type: .income, indexSet: indexSet)
+                                .swipeActions(edge: .leading) {
+                                    Button {
+                                        viewModel.editingCategory = category
+                                        viewModel.showEditSheet = true
+                                    } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
+                                    .tint(.blue)
+                                }
+                                .swipeActions {
+                                    Button(role: .destructive) {
+                                        viewModel.deleteCategory(category, context: context)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
                         }
                     }
                 }
@@ -53,18 +67,45 @@ struct ManageCategoriesView: View {
                         ForEach(expenseCategories) { category in
                             Text(category.name)
                                 .font(.body)
-                        }
-                        .onDelete { indexSet in
-                            deleteCategory(type: .expense, indexSet: indexSet)
+                                .swipeActions(edge: .leading) {
+                                    Button {
+                                        viewModel.editingCategory = category
+                                        viewModel.showEditSheet = true
+                                    } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
+                                    .tint(.blue)
+                                }
+                                .swipeActions {
+                                    Button(role: .destructive) {
+                                        viewModel.deleteCategory(category, context: context)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
                         }
                     }
                 }
+            }
+            .sheet(isPresented: $viewModel.showEditSheet) {
+                EditCategorySheet(
+                    category: viewModel.editingCategory,
+                    onSave: { name, type in
+                        viewModel.updateCategory(
+                            category: viewModel.editingCategory,
+                            name: name,
+                            type: type,
+                            context: context
+                        )
+                    }
+                )
             }
             .navigationTitle("Manage Categories")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        isFocused = false
                         showAddCategorySheet = true
                     } label: {
                         Image(systemName: "plus.circle.fill")
@@ -78,6 +119,12 @@ struct ManageCategoriesView: View {
             }
             .sheet(isPresented: $showAddCategorySheet) {
                 addCategorySheet
+            }
+            .onChange(of: showAddCategorySheet) { isPresented in
+                if !isPresented {
+                    // Ensure keyboard is down when the sheet closes
+                    isFocused = false
+                }
             }
             .alert(outcomeAlertMessage, isPresented: $showOutcomeAlert) {
                 Button("OK", role: .cancel) {
@@ -109,6 +156,11 @@ extension ManageCategoriesView {
             Form {
                 Section(header: SectionHeader("Category Name", icon: "tag")) {
                     TextField("Enter name", text: $viewModel.newCategoryName)
+                        .focused($isFocused)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            isFocused = false
+                        }
                 }
                 
                 Section(header: SectionHeader("Category Type", icon: "square.grid.2x2")) {
@@ -124,22 +176,21 @@ extension ManageCategoriesView {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
+                        isFocused = false
                         viewModel.resetFields()
                         dismissSheet()
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
+                        isFocused = false
                         switch viewModel.addCategory(context: context) {
                         case .success:
-                            // Immediately clear the form so it is clean if reopened,
-                            // then show success alert and dismiss after OK.
                             viewModel.resetFields()
                             outcomeAlertMessage = "Category added successfully."
                             lastAddWasSuccess = true
                             showOutcomeAlert = true
                         case .duplicate:
-                            viewModel.resetFields()
                             outcomeAlertMessage = "Category already exists."
                             lastAddWasSuccess = false
                             showOutcomeAlert = true
@@ -156,6 +207,7 @@ extension ManageCategoriesView {
     }
     
     func dismissSheet() {
+        isFocused = false
         showAddCategorySheet = false
     }
 }

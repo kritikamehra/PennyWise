@@ -10,7 +10,7 @@ import SwiftUI
 
 enum AddCategoryOutcome {
     case success
-//    case emptyName    // case can't be reached as button is disabled
+    //    case emptyName    // case can't be reached as button is disabled
     case duplicate
     case saveError(String)
 }
@@ -23,6 +23,14 @@ class ManageCategoriesViewModel {
     var newCategoryName: String = ""
     var selectedType: CategoryType = .expense     // default type
     var categories: [Category] = []
+    var showEditSheet: Bool = false
+    
+    // Used by ManageCategoriesView when opening the edit sheet
+    var editingCategory: Category?
+    
+    // Alert state for edit/update flows
+    var alertMessage: String = ""
+    var showAlert: Bool = false
     
     // MARK: - Init
     init() {}
@@ -82,6 +90,37 @@ class ManageCategoriesViewModel {
             fetchCategories(from: context)
         } catch {
             print("Error deleting category: \(error.localizedDescription)")
+        }
+    }
+    
+    // MARK: - Update
+    func updateCategory(category: Category?, name: String, type: CategoryType, context: ModelContext) {
+        guard let category else { return }
+        
+        let cleanedLower = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        
+        // Prevent duplicate (same name + type, different object)
+        if categories.contains(where: {
+            $0 !== category &&
+            $0.name.lowercased() == cleanedLower &&
+            $0.type == type
+        }) {
+            alertMessage = "A category with the same name already exists."
+            showAlert = true
+            return
+        }
+        
+        // Normal update
+        category.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        category.type = type
+        do {
+            try context.save()
+            fetchCategories(from: context)
+            alertMessage = "Category updated!"
+            showAlert = true
+        } catch {
+            alertMessage = "Failed to update category: \(error.localizedDescription)"
+            showAlert = true
         }
     }
     

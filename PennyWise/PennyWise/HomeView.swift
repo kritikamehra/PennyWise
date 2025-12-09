@@ -20,7 +20,7 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: Spacing.medium) {
-
+                
                 // MARK: - Quick Filter
                 Picker("Filter", selection: $viewModel.selectedType) {
                     ForEach(TransactionTypeFilter.allCases) { type in
@@ -31,7 +31,7 @@ struct HomeView: View {
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
-
+                
                 // MARK: - Empty State
                 if viewModel.filteredTransactions.isEmpty {
                     ContentUnavailableView(
@@ -40,29 +40,15 @@ struct HomeView: View {
                         description: Text("Try changing your filters.")
                     )
                     .padding(.top, Spacing.large)
-
+                    
                 } else {
-
+                    
                     // MARK: - List
                     List {
                         ForEach(viewModel.filteredTransactions) { transaction in
                             TransactionRow(transaction: transaction)
-//                                .swipeActions {
-//                                    Button(role: .destructive) {
-//                                        viewModel.deleteTransaction(transaction: transaction,
-//                                                                    context: context)
-//                                    } label: {
-//                                        Label("Delete", systemImage: "trash")
-//                                    }
-//                                }
-                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-
-                                    Button(role: .destructive) {
-                                        viewModel.deleteTransaction(transaction: transaction, context: context)
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-
+                            // EDIT
+                                .swipeActions(edge: .leading, allowsFullSwipe: false) {
                                     Button {
                                         selectedTransaction = transaction
                                         showEditSheet = true
@@ -70,6 +56,15 @@ struct HomeView: View {
                                         Label("Edit", systemImage: "pencil")
                                     }
                                     .tint(.blue)
+                                }
+                            
+                            // DELETE
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    Button(role: .destructive) {
+                                        viewModel.deleteTransaction(transaction: transaction, context: context)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
                                 }
                         }
                     }
@@ -94,10 +89,11 @@ struct HomeView: View {
                 FiltersView(viewModel: viewModel)
             }
             .sheet(item: $selectedTransaction, onDismiss: {
-                       viewModel.fetchTransactions(context: context)
-                   }) { tx in
-                       EditTransactionView(transaction: tx)
-                   }      }
+                viewModel.fetchTransactions(context: context)
+            }) { tx in
+                EditTransactionView(transaction: tx)
+            }
+        }
         .background(ColorPalette.background.ignoresSafeArea())
     }
 }

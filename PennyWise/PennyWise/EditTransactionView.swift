@@ -14,6 +14,7 @@ struct EditTransactionView: View {
     @Query(sort: \Category.name) private var allCategories: [Category]
 
     @State var viewModel = EditTransactionViewModel()
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -25,17 +26,20 @@ struct EditTransactionView: View {
                         .keyboardType(.decimalPad)
                         .font(.system(size: 18, weight: .medium))
                         .foregroundColor(Color("TextPrimary"))
+                        .focused($isFocused)
+                        .submitLabel(.done)
+                        .onSubmit { isFocused = false }
                 }
 
                 // MARK: - Type
                 Section(header: SectionHeader("Type", icon: "arrow.up.arrow.down")) {
-                    Picker("", selection: $viewModel.type) {
+                    Picker("Type", selection: $viewModel.type) {
                         Text("Income")
                             .tag("Income")
                         Text("Expense")
                             .tag("Expense")
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.menu)
                     .onChange(of: viewModel.type) { _ in
                         viewModel.updateCategoryForType(allCategories: allCategories)
                     }
@@ -72,8 +76,15 @@ struct EditTransactionView: View {
                     TextField("Add a note", text: $viewModel.note)
                         .font(.system(size: 16))
                         .foregroundColor(Color("TextPrimary"))
+                        .focused($isFocused)
+                        .submitLabel(.done)
+                        .onSubmit { isFocused = false }
                 }
             }
+            .simultaneousGesture(
+                TapGesture().onEnded { isFocused = false }
+            )
+            
             .padding(.top, Spacing.large)
             .scrollContentBackground(.hidden)
             .background(Color("Background"))
@@ -81,12 +92,16 @@ struct EditTransactionView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                        .foregroundColor(Color("Secondary"))
+                    Button("Cancel") {
+                        isFocused = false
+                        dismiss()
+                    }
+                    .foregroundColor(Color("Secondary"))
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
+                        isFocused = false
                         viewModel.apply(to: transaction)
                         dismiss()
                     }

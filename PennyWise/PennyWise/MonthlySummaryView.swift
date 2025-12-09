@@ -259,6 +259,7 @@ extension MonthlySummaryView {
                 .frame(height: 280)
             } else {
                 Text("No data available.")
+                    .foregroundColor(.secondary)
             }
         }
     }
@@ -269,25 +270,30 @@ extension MonthlySummaryView {
 extension MonthlySummaryView {
     
     var barChartSection: some View {
-        let data = monthlyExpenseCategoryBreakdown()
-        
-        return Chart(data, id: \.category) { item in
-            
-            // 1️⃣ Bar
-            BarMark(
-                x: .value("Category", item.category),
-                y: .value("Amount", item.amount)
-            )
-            
-            // 2️⃣ Category name ABOVE the bar
-            .annotation(position: .top) {
-                Text(item.category)
-                    .font(FontStyle.caption)
-                    .foregroundColor(Color("Secondary"))
-//                    .rotationEffect(.degrees(-30)) // optional, if long names
-                    .frame(maxWidth: 60)           // optional clipping
+        return VStack {
+            let data = monthlyExpenseCategoryBreakdown()
+            if !data.isEmpty {
+                Chart(data, id: \.category) { item in
+                    // Bar
+                    BarMark(
+                        x: .value("Category", item.category),
+                        y: .value("Amount", item.amount)
+                    )
+                    // Category name ABOVE the bar
+                    .annotation(position: .top) {
+                        Text(item.category)
+                            .font(FontStyle.caption)
+                            .foregroundColor(Color("Secondary"))
+                        //                    .rotationEffect(.degrees(-30)) // optional, if long names
+                            .frame(maxWidth: 60)           // optional clipping
+                    }
+                }
+                .chartXAxis(.hidden)   // hide bottom labels completely
+                .frame(height: 280)
+            } else {
+                Text("No data available.")
+                    .foregroundColor(.secondary)
             }
-            
         }
         .chartXAxis(.hidden)   // 🔥 hide bottom labels completely
         .frame(height: 280)
@@ -296,13 +302,20 @@ extension MonthlySummaryView {
     
     var lineChartSection: some View {
         let data = monthlyExpenseTrendByDay()
-        
-        return Chart(data, id: \.period) { item in
-            LineMark(
-                x: .value("Day", item.period),
-                y: .value("Total Expense", item.amount)
-            )
-            .symbol(Circle())
+        return VStack {
+            if !data.isEmpty {
+                Chart(data, id: \.period) { item in
+                    LineMark(
+                        x: .value("Day", item.period),
+                        y: .value("Total Expense", item.amount)
+                    )
+                    .symbol(Circle())
+                }
+                .frame(height: 280)
+            } else {
+                Text("No data available.")
+                    .foregroundColor(.secondary)
+            }
         }
         .frame(height: 280)
     }
